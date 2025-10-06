@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rialo Tap – v6 (bounce + header asset)</title>
+<style>
+:root{ --gold:#D4AF37; --gold2:#F5CC43; --bg:#0A0A0D; --muted:#202027; --white:#F6F6F7; }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:radial-gradient(60% 40% at 50% 30%, rgba(245,204,67,0.10), transparent 60%), var(--bg);color:var(--white);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+.wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100vh;}
+header{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #141419;background:linear-gradient(180deg,rgba(212,175,55,0.08),rgba(0,0,0,0));}
+header .logo{display:flex;gap:12px;align-items:center}
+.logo .mark{width:30px;height:30px;display:inline-grid;place-items:center;border-radius:8px;background:rgba(212,175,55,.12);box-shadow:inset 0 0 0 1px rgba(212,175,55,.25);overflow:hidden}
+.logo h1{margin:0;font-weight:900;letter-spacing:0.12em;color:var(--gold);font-size:20px}
+.logo small{opacity:.8;letter-spacing:.35em;font-size:10px;display:block;margin-top:2px}
+.btn{appearance:none;border:1px solid var(--gold);background:transparent;color:var(--gold);padding:10px 14px;border-radius:999px;font-weight:700;cursor:pointer;transition:.15s transform,.2s box-shadow;}
+.btn:hover{box-shadow:0 0 0 3px rgba(212,175,55,.18);}
+.btn.primary{background:var(--gold);color:#111;border-color:var(--gold)}
+.select{appearance:none;border:1px solid var(--gold);background:#0b0b12;color:var(--gold);padding:10px 14px;border-radius:999px;font-weight:700;cursor:pointer}
+.select:focus{outline:none;box-shadow:0 0 0 3px rgba(212,175,55,.18);}
+.grid{display:grid;gap:14px;padding:14px}
+.panel{background:linear-gradient(180deg,#121217,#0a0a0d);border:1px solid #1C1C23;border-radius:18px;box-shadow:inset 0 0 0 1px rgba(245,204,67,0.06), 0 10px 30px rgba(0,0,0,.35)}
+.panel h3{margin:0 0 6px 0;color:var(--gold2);letter-spacing:.2em}
+.hud{display:flex;gap:10px;align-items:center;justify-content:center;padding:10px}
+.hud .pill{border:1px solid #2a2a34;border-radius:999px;padding:8px 12px;background:#0b0b12;display:flex;gap:8px;align-items:center}
+.hud .pill strong{color:var(--gold2)}
+#game{position:relative; min-height:72vh;}
+canvas{display:block;width:100%;height:100%;border-radius:18px;cursor:none}
+.overlay{position:absolute;inset:0;display:grid;place-items:center}
+.card{backdrop-filter: blur(6px);background:rgba(10,10,13,.55);border:1px solid rgba(212,175,55,.2);padding:18px;border-radius:16px;max-width:520px;text-align:center}
+.field{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
+input[type=text]{background:#0f0f14;border:1px solid #23232b;color:var(--white);padding:10px;border-radius:10px;min-width:180px}
+table{width:100%;border-collapse:collapse;color:#cfcfd8}
+th,td{padding:8px;border-bottom:1px solid #1b1b22;font-size:14px}
+.foot{padding:14px;text-align:center;opacity:.7}
+#hudTop{position:absolute;top:10px;left:10px;display:flex;gap:8px;z-index:5}
+#hudTop .pill{border:1px solid #2a2a34;border-radius:999px;padding:6px 10px;background:#0b0b12;display:flex;gap:6px;align-items:center}
+#hudTop strong{color:var(--gold2)}
+.tag-rare{display:inline-flex;gap:6px;align-items:center;border:1px solid rgba(245,204,67,.45);color:#111;background:linear-gradient(180deg,#F5CC43,#D4AF37);border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700}
+@media(min-width:900px){ .grid{grid-template-columns:2fr 1fr} #game{min-height:74vh} }
+@media(max-width:420px){ #game{min-height:70vh} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <span class="mark" title="Rialo">
+        <img id="headerLogo" src="./assets/rialo-gold.png" alt="Rialo" style="width:28px;height:28px;border-radius:6px;display:block"/>
+      </span>
+      <div>
+        <h1>RIALO</h1>
+        <small>COMMUNITY ELITE</small>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="tag-rare">🌟 RARE: +3</span>
+      <select id="skinSelect" class="select">
+        <option value="rialo-gold.png">Gold (default)</option>
+        <option value="rialo-blue.png">Blue</option>
+        <option value="rialo-dark.png">Dark</option>
+      </select>
+      <button id="btnShare" class="btn" title="Export Score Card">Export</button>
+      <button id="btnReset" class="btn" title="Reset leaderboard">Reset</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section id="game" class="panel">
+      <div id="hudTop">
+        <div class="pill">⏱️ <strong id="hudTime">30s</strong></div>
+        <div class="pill">⚡ <strong id="hudScore">0</strong></div>
+        <div class="pill">✨ <strong id="hudCombo">x1</strong></div>
+      </div>
+      <canvas id="canvas"></canvas>
+      <div class="overlay" id="startScreen">
+        <div class="card">
+          <h2 style="margin:4px 0 10px 0;letter-spacing:.18em;color:var(--gold)">RIALO TAP</h2>
+          <p style="margin:0 0 12px 0;opacity:.85">Tap salah satu dari <b>3 logo Rialo</b> yang bergerak. Satu di antaranya selalu <b>RARE (+3)</b> dan berpindah <b>random</b> setiap beberapa detik. Waktu <b>30 detik</b>.</p>
+          <div class="hud" style="margin-top:6px">
+            <div class="pill">⏱️ <strong>30s</strong></div>
+            <div class="pill">⚡ <strong>Energy</strong></div>
+            <div class="pill">✨ <strong>Combo</strong></div>
+          </div>
+          <div style="margin-top:14px">
+            <button id="btnStart" class="btn primary">Start Game</button>
+          </div>
+          <div class="field">
+            <input id="playerName" type="text" placeholder="Enter name" />
+          </div>
+          <p style="opacity:.65;margin-top:10px">Tip: Klik area game untuk mulai.</p>
+        </div>
+      </div>
+      <div class="overlay" id="endScreen" style="display:none">
+        <div class="card">
+          <h2 style="margin:4px 0 8px 0;color:var(--gold)">Selesai!</h2>
+          <div class="hud"><div class="pill">⚡ <strong id="finalScore">0</strong></div><div class="pill">🔥 <strong id="finalBest">Best 0</strong></div></div>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+            <button id="btnAgain" class="btn primary">Main Lagi</button>
+            <button id="btnSave" class="btn">Simpan Skor</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel" style="padding:12px 12px 6px 12px">
+      <h3>LEADERBOARD</h3>
+      <table id="board"><thead><tr><th>#</th><th>Nama</th><th>Skor</th></tr></thead><tbody></tbody></table>
+      <div class="foot">Lokal (off-chain). Reset harian otomatis (waktu perangkat).</div>
+    </aside>
+  </main>
+
+  <footer class="foot">© Rialo – Tap to earn (off-chain MVP).</footer>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+  function resize(){ canvas.width = Math.floor(canvas.clientWidth*DPR); canvas.height = Math.floor(canvas.clientHeight*DPR); }
+  window.addEventListener('resize', resize); resize();
+
+  // HUD
+  const hudTime=document.getElementById('hudTime');
+  const hudScore=document.getElementById('hudScore');
+  const hudCombo=document.getElementById('hudCombo');
+
+  let running=false, t=0, timeLeft=30, score=0, combo=1, comboTimer=0, best=Number(localStorage.getItem('rialo_best')||0);
+  let items=[], sparks=[], ripples=[];
+  let rareIndex=0, rareTimer=0;
+  let cursorPos={x:0,y:0}, cursorVisible=false;
+
+  function rand(a,b){return a+Math.random()*(b-a)}
+
+  // ---------- SPRITE dari /assets ----------
+  const ASSETS_BASE = './assets/';
+  const SPRITE_FILES = ['rialo-gold.png','rialo-blue.png','rialo-dark.png'];
+
+  const spriteCache = new Map();
+  function getUrlParam(name){ return new URLSearchParams(location.search).get(name); }
+
+  // versi aset dari URL ?ver= atau localStorage
+  const _urlVer = getUrlParam('ver');
+  if(_urlVer) localStorage.setItem('rialo_assets_v', _urlVer);
+  const VERSION = _urlVer || localStorage.getItem('rialo_assets_v') || 'dev';
+
+  function loadSprite(filename){
+    if(spriteCache.has(filename)) return spriteCache.get(filename);
+    const img = new Image();
+    img.decoding = 'async';
+    const v = VERSION;
+    const ts = Date.now();
+    img.onload = ()=> console.info('[Rialo] sprite loaded:', img.src);
+    img.onerror = ()=> console.error('[Rialo] sprite FAILED:', img.src);
+    img.src = `${ASSETS_BASE}${filename}?v=${encodeURIComponent(v)}&t=${ts}`;
+    spriteCache.set(filename, img);
+    return img;
+  }
+
+  let activeSpriteFile = (function(){
+    const p = getUrlParam('skin');
+    if(p){
+      const match = SPRITE_FILES.find(f=>f.toLowerCase()===p.toLowerCase());
+      if(match) return match;
+    }
+    return localStorage.getItem('rialo_skin') || 'rialo-gold.png';
+  })();
+  let activeSprite = loadSprite(activeSpriteFile);
+
+  // Header logo img element
+  const headerLogo = document.getElementById('headerLogo');
+  function setHeaderLogo(file){
+    headerLogo.src = `${ASSETS_BASE}${file}?v=${encodeURIComponent(VERSION)}&t=${Date.now()}`;
+  }
+  setHeaderLogo(activeSpriteFile);
+
+  // spawn exactly 3 logos (bigger)
+  function setupItems(){
+    items = [
+      {x:canvas.width*0.25, y:canvas.height*0.45, scale:1.4, vx:70, vy:-36},
+      {x:canvas.width*0.52, y:canvas.height*0.28, scale:1.3, vx:-60, vy:50},
+      {x:canvas.width*0.78, y:canvas.height*0.65, scale:1.5, vx:52, vy:-58},
+    ];
+    rareIndex = Math.floor(Math.random()*items.length);
+    rareTimer = 4.0; // switch every ~4s
+  }
+  setupItems();
+
+  function spawnSpark(x,y,amt=16){ for(let i=0;i<amt;i++){ const a=Math.random()*Math.PI*2, sp=rand(60,180); sparks.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:rand(.25,.7)}); } }
+  function spawnRipple(x,y,color='rgba(212,175,55,1)'){ripples.push({x,y,r:0,life:.6,color})}
+
+  function drawBG(){ ctx.save(); const g=ctx.createRadialGradient(canvas.width*0.5,canvas.height*0.35,10,canvas.width*0.5,canvas.height*0.35, Math.max(canvas.width,canvas.height)*0.8); g.addColorStop(0,'rgba(245,204,67,0.10)'); g.addColorStop(1,'rgba(0,0,0,0.0)'); ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore(); }
+
+  // fallback vector logo
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); }
+  function drawFallbackLogo(x,y,scale,isRare=false){
+    const s=34*scale*DPR;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.shadowColor = isRare ? 'rgba(255,220,120,.65)' : 'rgba(245,204,67,.35)';
+    ctx.shadowBlur = (isRare? 16:10)*DPR;
+    ctx.fillStyle = isRare ? '#FFE08A' : '#F5CC43';
+    roundRect(-s*1.35,-s*0.35, s*2.15, s*0.70, s*0.35); ctx.fill();
+    roundRect(s*0.35,-s*1.08, s*1.05, s*0.92, s*0.46); ctx.fill();
+    roundRect(s*0.35, -s*0.10, s*1.05, s*1.95, s*0.50); ctx.fill();
+    if(isRare){
+      ctx.shadowColor='rgba(255,225,140,.8)'; ctx.shadowBlur=24*DPR; ctx.globalAlpha=.45;
+      ctx.beginPath(); ctx.arc(0,0,s*1.8,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  }
+
+  function drawRialoSprite(x,y,scale,isRare=false){
+    const img = activeSprite;
+    if(!img || !img.complete || img.naturalWidth===0){
+      drawFallbackLogo(x,y,scale,isRare);
+      return;
+    }
+    const baseSize = 64;
+    const s = baseSize*scale*DPR;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.shadowColor = isRare ? 'rgba(255,225,140,.7)' : 'rgba(245,204,67,.35)';
+    ctx.shadowBlur = isRare ? 24*DPR : 12*DPR;
+    ctx.drawImage(img, -s/2, -s/2, s, s);
+    if(isRare){ ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(0,0,s*0.95,0,Math.PI*2); ctx.fillStyle='rgba(255,225,140,1)'; ctx.fill(); ctx.globalAlpha=1; }
+    ctx.restore();
+  }
+
+  function drawItems(dt){
+    rareTimer -= dt;
+    if(rareTimer <= 0){
+      rareIndex = Math.floor(Math.random()*items.length);
+      rareTimer = 4 + Math.random()*2;
+    }
+    for(let i=0;i<items.length;i++){
+      const it = items[i];
+      it.x+=it.vx*dt; it.y+=it.vy*dt;
+      const pad=56*DPR;
+      if(it.x<pad || it.x>canvas.width-pad) it.vx*=-1;
+      if(it.y<pad || it.y>canvas.height-pad) it.vy*=-1;
+      drawRialoSprite(it.x,it.y,it.scale, i===rareIndex);
+    }
+  }
+
+  function drawSparks(dt){ ctx.globalCompositeOperation='lighter'; for(const s of sparks){ s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy+=60*dt; s.life-=dt; ctx.globalAlpha=Math.max(0,s.life); ctx.fillStyle='rgba(245,204,67,1)'; ctx.fillRect(s.x,s.y,2*DPR,2*DPR);} ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over'; sparks=sparks.filter(s=>s.life>0);}
+  function drawRipples(dt){ for(const r of ripples){ r.r+=300*dt; r.life-=dt; ctx.strokeStyle=r.color.replace('1)', Math.max(0,r.life)+')'); ctx.lineWidth=2*DPR; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke(); } ripples=ripples.filter(r=>r.life>0); }
+
+  function drawCursor(){ if(!cursorVisible) return; const x=cursorPos.x,y=cursorPos.y,s=12*DPR; ctx.save(); ctx.translate(x,y); ctx.shadowColor='rgba(245,204,67,.35)'; ctx.shadowBlur=6*DPR; ctx.fillStyle='#F5CC43'; roundRect(-s*1.4,-s*0.45, s*2.2, s*0.9, s*0.45); roundRect(-s*0.2,-s*0.45, s*0.9, s*1.1, s*0.45); roundRect(-s*0.2, s*0.25, s*0.9, s*1.1, s*0.45); ctx.fill(); ctx.restore(); }
+
+  function tick(ts){ const now=ts/1000; const dt=Math.min(.033, now-(t||now)); t=now; ctx.clearRect(0,0,canvas.width,canvas.height); drawBG(); drawItems(dt); drawSparks(dt); drawRipples(dt); drawCursor(); if(running){ timeLeft=Math.max(0, timeLeft-dt); comboTimer=Math.max(0,comboTimer-dt); if(comboTimer===0 && combo>1){ combo=Math.max(1, combo-1);} if(timeLeft<=0){ endGame(); } hudTime.textContent = Math.ceil(timeLeft)+'s'; hudScore.textContent = String(score); hudCombo.textContent = 'x'+combo; } requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+
+  function isHit(it,x,y){
+    const baseR = 32;
+    const r = baseR * it.scale * DPR * 1.1;
+    const dx=it.x-x, dy=it.y-y; return (dx*dx+dy*dy) <= r*r;
+  }
+
+  function clampSpeed(v, minAbs, maxAbs){
+    const s = Math.max(minAbs, Math.min(Math.abs(v), maxAbs));
+    return v<0 ? -s : s;
+  }
+
+  function tap(x,y){
+    if(!running) return;
+    let hitIndex=-1;
+    for(let i=0;i<items.length;i++){ if(isHit(items[i],x,y)){ hitIndex=i; break; } }
+    if(hitIndex>=0){
+      const it = items[hitIndex];
+      const rare = (hitIndex===rareIndex);
+      const base = rare? 3: 1;
+      const gain=base*combo;
+      score+=gain;
+      combo=Math.min(9,combo+1);
+      comboTimer=1.25;
+      spawnSpark(x,y,12+combo*2+(rare?10:0));
+      spawnRipple(x,y, rare? 'rgba(255,225,140,1)':'rgba(212,175,55,1)');
+
+      // === Bounce effect ===
+      it.vx = -it.vx + rand(-40,40);
+      it.vy = -it.vy + rand(-40,40);
+      // keep speed within sane range
+      it.vx = clampSpeed(it.vx, 40, 140);
+      it.vy = clampSpeed(it.vy, 40, 140);
+    } else {
+      combo=Math.max(1, combo-1);
+    }
+  }
+
+  canvas.addEventListener('pointerdown',(e)=>{ const rect=canvas.getBoundingClientRect(); const x=(e.clientX-rect.left)*DPR; const y=(e.clientY-rect.top)*DPR; tap(x,y); });
+  canvas.addEventListener('pointermove',(e)=>{ const rect=canvas.getBoundingClientRect(); cursorPos.x=(e.clientX-rect.left)*DPR; cursorPos.y=(e.clientY-rect.top)*DPR; cursorVisible=true; });
+  canvas.addEventListener('pointerleave',()=>{cursorVisible=false;});
+
+  const startScreen=document.getElementById('startScreen');
+  const endScreen=document.getElementById('endScreen');
+  const finalScore=document.getElementById('finalScore');
+  const finalBest=document.getElementById('finalBest');
+  const btnStart=document.getElementById('btnStart');
+  const btnAgain=document.getElementById('btnAgain');
+  const btnSave=document.getElementById('btnSave');
+  const btnReset=document.getElementById('btnReset');
+  const btnShare=document.getElementById('btnShare');
+  const playerName=document.getElementById('playerName');
+  const skinSelect=document.getElementById('skinSelect');
+
+  function startGame(){ running=true; timeLeft=30; score=0; combo=1; comboTimer=0; endScreen.style.display='none'; startScreen.style.display='none'; }
+  function endGame(){ running=false; endScreen.style.display='grid'; finalScore.textContent=score; if(score>best){ best=score; localStorage.setItem('rialo_best', String(best)); } finalBest.textContent='Best '+best; }
+  btnStart.onclick=startGame;
+  startScreen.addEventListener('click', (e)=>{ if(e.target.id!=='playerName') startGame(); });
+  btnAgain.onclick=()=>{ startScreen.style.display='grid'; endScreen.style.display='none' };
+
+  // Leaderboard
+  function dailyKey(){ const d=new Date(); return `rialo_board_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`; }
+  function escapeHtml(s){return String(s).replace(/[&<>"]+/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]))}
+  function loadBoard(){ const key=dailyKey(); const list=JSON.parse(localStorage.getItem(key)||'[]'); const tbody=document.querySelector('#board tbody'); tbody.innerHTML=''; list.sort((a,b)=>b.s-a).slice(0,10).forEach((row,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${escapeHtml(row.n)}</td><td>${row.s}</td>`; tbody.appendChild(tr); }); }
+  function saveScore(){ const name=playerName.value.trim()||'Player'; const key=dailyKey(); const list=JSON.parse(localStorage.getItem(key)||'[]'); list.push({n:name,s:score,t:Date.now()}); localStorage.setItem(key, JSON.stringify(list)); loadBoard(); }
+  btnSave.onclick=saveScore;
+  btnReset.onclick=()=>{ if(confirm('Reset leaderboard hari ini?')){ localStorage.removeItem(dailyKey()); loadBoard(); }}
+  btnShare.onclick=()=>{ const tmp=document.createElement('canvas'); const w=1080,h=1920; tmp.width=w; tmp.height=h; const c=tmp.getContext('2d'); const grd=c.createRadialGradient(w*0.5,h*0.35,10,w*0.5,h*0.35, Math.max(w,h)*0.8); grd.addColorStop(0,'rgba(245,204,67,0.12)'); grd.addColorStop(1,'rgba(0,0,0,1)'); c.fillStyle=grd; c.fillRect(0,0,w,h); c.strokeStyle='rgba(212,175,55,0.9)'; c.lineWidth=6; if(c.roundRect){ c.roundRect(32,32,w-64,h-64,24);} else { c.strokeRect(32,32,w-64,h-64);} c.stroke(); c.fillStyle='#D4AF37'; c.font='900 48px Inter, Arial'; c.textAlign='center'; c.fillText('RIALO • TAP', w/2, 120); c.fillStyle='#F5CC43'; c.font='600 32px Inter, Arial'; c.fillText('Score: '+score+'  •  Best: '+best, w/2, 190); c.fillStyle='#C7C7CE'; c.font='400 26px Inter, Arial'; c.fillText('Name: '+(playerName.value||'Player'), w/2, 240); const url=tmp.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download='rialo_scorecard.png'; a.click(); }
+
+  // Skin dropdown + sync (ubah sprite + header logo)
+  (function initSkinDropdown(){
+    if(!skinSelect) return;
+    skinSelect.value = activeSpriteFile;
+    skinSelect.addEventListener('change', ()=>{
+      activeSpriteFile = skinSelect.value;
+      localStorage.setItem('rialo_skin', activeSpriteFile);
+      activeSprite = loadSprite(activeSpriteFile);
+      setHeaderLogo(activeSpriteFile);
+    });
+    const p = getUrlParam('skin');
+    if(p){
+      const match = SPRITE_FILES.find(f=>f.toLowerCase()===p.toLowerCase());
+      if(match){
+        skinSelect.value = match;
+        activeSpriteFile = match;
+        activeSprite = loadSprite(match);
+        setHeaderLogo(match);
+      }
+    }
+  })();
+
+  loadBoard();
+})();
+</script>
+</body>
+</html>
