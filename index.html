@@ -5,10 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rialo Tap – v6 (bounce + header asset)</title>
 <style>
-:root{ --gold:#D4AF37; --gold2:#F5CC43; --bg:#0A0A0D; --muted:#202027; --white:#F6F6F7; }
+:root{ --gold:#D4AF37; --gold2:#F5CC43; --bg:#0A0A0D; --muted:#202027; --white:#F6F6F7; --bg-img: ./assets/bg-rialo.png;}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:radial-gradient(60% 40% at 50% 30%, rgba(245,204,67,0.10), transparent 60%), var(--bg);color:var(--white);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-.wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100vh;}
+html, body {
+  height: 100%;
+  margin: 0;
+  color: var(--white);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* background foto + overlay 40% */
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+    url("./assets/bg-rialo.png") center center / cover no-repeat fixed,
+    var(--bg);
+}
 header{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #141419;background:linear-gradient(180deg,rgba(212,175,55,0.08),rgba(0,0,0,0));}
 header .logo{display:flex;gap:12px;align-items:center}
 .logo .mark{width:30px;height:30px;display:inline-grid;place-items:center;border-radius:8px;background:rgba(212,175,55,.12);box-shadow:inset 0 0 0 1px rgba(212,175,55,.25);overflow:hidden}
@@ -19,13 +29,21 @@ header .logo{display:flex;gap:12px;align-items:center}
 .btn.primary{background:var(--gold);color:#111;border-color:var(--gold)}
 .select{appearance:none;border:1px solid var(--gold);background:#0b0b12;color:var(--gold);padding:10px 14px;border-radius:999px;font-weight:700;cursor:pointer}
 .select:focus{outline:none;box-shadow:0 0 0 3px rgba(212,175,55,.18);}
-.grid{display:grid;gap:14px;padding:14px}
+.grid{display:grid;gap:10px;padding:10px}
 .panel{background:linear-gradient(180deg,#121217,#0a0a0d);border:1px solid #1C1C23;border-radius:18px;box-shadow:inset 0 0 0 1px rgba(245,204,67,0.06), 0 10px 30px rgba(0,0,0,.35)}
 .panel h3{margin:0 0 6px 0;color:var(--gold2);letter-spacing:.2em}
 .hud{display:flex;gap:10px;align-items:center;justify-content:center;padding:10px}
 .hud .pill{border:1px solid #2a2a34;border-radius:999px;padding:8px 12px;background:#0b0b12;display:flex;gap:8px;align-items:center}
 .hud .pill strong{color:var(--gold2)}
 #game{position:relative; min-height:72vh;}
+#game::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
 canvas{display:block;width:100%;height:100%;border-radius:18px;cursor:none}
 .overlay{position:absolute;inset:0;display:grid;place-items:center}
 .card{backdrop-filter: blur(6px);background:rgba(10,10,13,.55);border:1px solid rgba(212,175,55,.2);padding:18px;border-radius:16px;max-width:520px;text-align:center}
